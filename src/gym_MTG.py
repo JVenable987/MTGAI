@@ -1,8 +1,14 @@
 import gym
 import random
 
-DECK_CONTENTS = (2, 2, 2, 2, 2, 3, 4)  # TODO What needs to be in the deck? This needs to be double-checked
-FINAL_TURN = 5  # TODO This also needs to be double checked
+# 19, 13, 3, 0, 0, 0, 25 for 3 turns
+# 14, 14, 8, 0, 0, 0, 24 for 4 turns
+# 8, 14, 10, 3, 0, 0, 25 for 5 turns
+# 4, 13, 10, 6, 1, 0, 27 for 6 turns
+# 0, 12, 10, 7, 4, 0, 27 for 7 turns
+# 0, 10, 10, 7, 5, 1, 27 for 8 turns
+DECK_CONTENTS = (8, 14, 10, 3, 0, 0, 25)
+FINAL_TURN = 5
 
 
 class MTGEnv(gym.Env):
@@ -37,6 +43,7 @@ class MTGEnv(gym.Env):
         # Action 1-6: Play a 1-6 drop creature, do not pass turn
 
         done = False
+        reward = 0
 
         # Done before the first turn
         if (self.Turn == 1) and (self.hand.NumberOfLands > 0):
@@ -110,7 +117,7 @@ class MTGEnv(gym.Env):
             # TODO discard down to 7 cards in hand if above 7 cards in hand
             if self.Turn == self.FinalTurn:
                 done = True
-                reward = self.TotalDamage  # TODO verify if this should be self.CreatureDamage instead
+                reward = self.CreatureDamage
             self.Turn += 1
 
             # Main Phase part 1
@@ -124,11 +131,12 @@ class MTGEnv(gym.Env):
                 self.CreatureDamage += played_creature_amt * (creature_type + 2)
                 self.CreaturesPlayedThisTurn[creature_type] = 0
 
+        # TODO check what state values the AI should know
         state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         if not done:
-            reward = self.TotalDamage  # TODO verify if this should be self.CreatureDamage instead
+            reward = self.CreatureDamage
         info = self.deck
-        return state, reward, done, info  # TODO reward might be None here if we're not careful, double check everything
+        return state, reward, done, info
 
     def reset(self):
         # Reset the game for the next iteration.
@@ -144,6 +152,7 @@ class MTGEnv(gym.Env):
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
+        # TODO check what state values the AI should know
         state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         return state
 
