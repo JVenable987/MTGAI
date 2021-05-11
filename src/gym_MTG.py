@@ -249,7 +249,7 @@ class Hand:
         elif card_type == 7:
             if (self.NumberOfLands > 0):
                 self.NumberOfLands -= 1
-            return True
+                return True
         else
             return False
 
