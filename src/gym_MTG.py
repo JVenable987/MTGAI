@@ -49,7 +49,7 @@ class MTGEnv(gym.Env):
         self.deck = Deck()
         self.deck.SetDeck(DECK_CONTENTS[0], DECK_CONTENTS[1], DECK_CONTENTS[2], DECK_CONTENTS[3],
                           DECK_CONTENTS[4], DECK_CONTENTS[5], DECK_CONTENTS[6])
-        hand = self.deck.DrawHand()
+        hand_arr = self.deck.DrawHand()
         self.hand = Hand()
         self.hand.SetHand(hand_arr[0], hand_arr[1], hand_arr[2], hand_arr[3],
                           hand_arr[4], hand_arr[5], hand_arr[6])
@@ -81,7 +81,6 @@ class MTGEnv(gym.Env):
         self.done = False
         self.reward = 0
         info = state
-        return state, self.reward, done, info
 
     def step(self, action):
         # Take in the AI's action for one turn, process the results,
@@ -437,10 +436,10 @@ for i in range(num_episodes):
         if np.random.random() < eps:
             a = np.random.randint(0, 7)
         else:
-            a = np.argmax(model.predict([s:s + 1]))
+            a = np.argmax(model.predict(np.identity(5)[s:s + 1]))
         new_s, r, done, _ = env.step(a)
-        target = r + y * np.max([new_s:new_s + 1]))
-        target_vec = model.predict([s:s + 1])[0]
+        target = r + y * np.max(model.predict(np.identity(5)[new_s:new_s + 1]))
+        target_vec = model.predict(np.identity(5)[s:s + 1])[0]
         target_vec[a] = target
         model.fit(np.identity(5)[s:s + 1], target_vec.reshape(-1, 7), epochs=1, verbose=0)
         s = new_s
