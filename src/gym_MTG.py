@@ -238,7 +238,7 @@ class MTGEnv(gym.Env):
         done = False
         info = state
         #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
-        return state, reward, done, info
+        return state
 
     def render(self, mode='human'):
         pass
