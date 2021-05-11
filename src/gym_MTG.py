@@ -399,9 +399,9 @@ class Deck:
 #With keras model it is
 
 #model = Sequential()
-#model.add(InputLayer(batch_input_shape=(1, 5)))
+#model.add(InputLayer(batch_input_shape=(1, 5))) #input shape should be changed to 1, 19
 #model.add(Dense(10, activation='sigmoid'))
-#model.add(Dense(2, activation='linear'))
+#model.add(Dense(2, activation='linear'))           #output shape should be changed to 7
 #model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 
 # now execute the q learning
@@ -442,7 +442,15 @@ class Deck:
 #    observation = env.reset()
 #    print(observation)
 #    print(output)
-#    env.step(env.action_space.sample())#the env.action_space.sample() should be replaced with the np.argmax I believe
+#    env.step(env.action_space.sample())#the env.action_space.sample() should be replaced with the np.argmax when predicting I believe
 #    env.close()
     
 #prediction
+
+#for _ in range(1000):
+    #env.render()
+#    observation = env.reset()
+#    print(observation)
+#    print(output)
+#    env.step(np.argmax(...))#the env.action_space.sample() should be replaced with the np.argmax when predicting I believe
+#    env.close()
