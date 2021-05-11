@@ -1,4 +1,5 @@
 import gym
+from gym import spaces #this adds space.Tuple, and presumably other things as well
 import random
 
 # 19, 13, 3, 0, 0, 0, 25 for 3 turns
@@ -14,9 +15,29 @@ FINAL_TURN = 5
 class MTGEnv(gym.Env):
 
     def __init__(self):
+        self.observation_space = gym.spaces.TupleDiscrete(6)  # Number of state information numbers that need to be provided
+        ##should provide... (as explaination, '\' is line countinuation character I believe, and ## are commented out comments so you can remove # from each line)
+        
+        ##game state values, Five total, maybe add if a land was played, but currently looks like land automatically played once per turn.
+        ##limits are FINAL_TURN+1 for turn, FINAL_TURN for ManaLeft, Assume (FINAL_TURN+2)*(FINAL_TURN+2)is limit for CreatureDamage,
+        ##and that previous number is squared for total damage
+        #[Turn, ManaLeft, LandsInPlay, CreatureDamage, TotalDamage, \
+        
+        ##This is the hand values which is in order of, 1s, 2s,3s,4s,5s,6s, and lands I believe, and has 7 total values, can probably limit to 7 of each type
+        ##but will have to have a lose if they can't play anything due to only having one type of non-land in hand, and exceeds the value limit I would guess
+        #self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        
+        ##We also add in the deck states, which also has Seven total values, which can each be from 0 to 53 in general
+        #self.deck.NumberOf1Cost, \
+        #self.deck.NumberOf2Cost, \
+        #self.deck.NumberOf3Cost, \
+        #self.deck.NumberOf4Cost, \
+        #self.deck.NumberOf5Cost, \
+        #self.deck.NumberOf6Cost, \
+        #self.deck.NumberOfLands) #and this is ending the things we are putting in.  As such, there are 5+7+7 variables for the states.
+        
+        #check out spaces.MultiDiscrete(), and see if it fits the situation better
         self.action_space = gym.spaces.Discrete(7)  # Number of possible actions
-        self.observation_space = gym.spaces.Discrete(6)  # Number of state information numbers that need to be provided
-
         self.deck = Deck()
         self.deck.SetDeck(DECK_CONTENTS[0], DECK_CONTENTS[1], DECK_CONTENTS[2], DECK_CONTENTS[3],
                           DECK_CONTENTS[4], DECK_CONTENTS[5], DECK_CONTENTS[6])
@@ -26,8 +47,12 @@ class MTGEnv(gym.Env):
                           hand_arr[4], hand_arr[5], hand_arr[6])
         self.FinalTurn = FINAL_TURN
         self.Turn = 1
-        self.ManaLeft = 0
-        self.LandsInPlay = 0
+        if (self.hand.PlayCard(7)):
+            self.LandsInPlay = 1
+        else:
+            self.LandsInPlay = 0
+        self.ManaLeft = LandsInPlay
+        
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
@@ -45,15 +70,17 @@ class MTGEnv(gym.Env):
         done = False
         reward = 0
 
+        #commented out before first turn code, and replaced this code in the openai gym init() and reset(), to prevent doing it multiple times in a turn
         # Done before the first turn
-        if (self.Turn == 1) and (self.hand.NumberOfLands > 0):
-            # Play a land first thing
-            self.hand.PlayCard(7)
-            self.LandsInPlay += 1
-            # Tap all lands, add mana accordingly
-            self.ManaLeft = self.LandsInPlay
+        #if (self.Turn == 1) and (self.hand.NumberOfLands > 0):
+        #    # Play a land first thing
+        #    self.hand.PlayCard(7)
+        #    self.LandsInPlay += 1
+        #    # Tap all lands, add mana accordingly
+        #    self.ManaLeft = self.LandsInPlay
 
         # Actions 1-6 are done during the First Main Phase part 2
+        #Maybe have no punishment, but set done = True, and the reward will return either 0 for not done, or TotalDamage if done.
         if action == 1:
             if (self.ManaLeft < 1) or (self.hand.NumberOf1Cost < 1):
                 # Invalid move, punish AI, end game
@@ -132,6 +159,7 @@ class MTGEnv(gym.Env):
                 self.CreaturesPlayedThisTurn[creature_type] = 0
 
         # TODO check what state values the AI should know
+        #refer to around line 22 for values for state
         state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         if not done:
             reward = self.CreatureDamage
@@ -147,12 +175,16 @@ class MTGEnv(gym.Env):
         self.hand.SetHand(hand_arr[0], hand_arr[1], hand_arr[2], hand_arr[3],
                           hand_arr[4], hand_arr[5], hand_arr[6])
         self.Turn = 1
-        self.ManaLeft = 0
-        self.LandsInPlay = 0
+        #attempt to play the card
+        if (self.hand.PlayCard(7)):
+            self.LandsInPlay = 1
+        else:
+            self.LandsInPlay = 0
+        self.ManaLeft = LandsInPlay
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
-        # TODO check what state values the AI should know
+        # TODO check what state values the AI should know, and remember to do in order
         state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         return state
 
@@ -191,19 +223,35 @@ class Hand:
 
     def PlayCard(self, card_type):
         if card_type == 1:
-            self.NumberOf1Cost -= 1
+            if (self.NumberOf1Cost > 0):
+                self.NumberOf1Cost -= 1
+                return True
         elif card_type == 2:
-            self.NumberOf2Cost -= 1
+            if (self.NumberOf2Cost > 0):
+                self.NumberOf2Cost -= 1
+                return True
         elif card_type == 3:
-            self.NumberOf3Cost -= 1
+            if (self.NumberOf3Cost > 0):
+                self.NumberOf3Cost -= 1
+                return True
         elif card_type == 4:
-            self.NumberOf4Cost -= 1
+            if (self.NumberOf4Cost > 0):
+                self.NumberOf4Cost -= 1
+                return True
         elif card_type == 5:
-            self.NumberOf5Cost -= 1
+            if (self.NumberOf5Cost > 0):
+                self.NumberOf5Cost -= 1
+                return True
         elif card_type == 6:
-            self.NumberOf6Cost -= 1
+            if (self.NumberOf6Cost > 0):
+                self.NumberOf6Cost -= 1
+                return True
         elif card_type == 7:
-            self.NumberOfLands -= 1
+            if (self.NumberOfLands > 0):
+                self.NumberOfLands -= 1
+            return True
+        else
+            return False
 
     def AddDrawnCard(self, card_type):
         if card_type == 1:
