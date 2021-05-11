@@ -50,7 +50,7 @@ class MTGEnv(gym.Env):
             self.LandsInPlay = 1
         else:
             self.LandsInPlay = 0
-        self.ManaLeft = LandsInPlay
+        self.ManaLeft = self.LandsInPlay
         
         self.CreatureDamage = 0
         self.TotalDamage = 0
@@ -179,7 +179,7 @@ class MTGEnv(gym.Env):
             self.LandsInPlay = 1
         else:
             self.LandsInPlay = 0
-        self.ManaLeft = LandsInPlay
+        self.ManaLeft = self.LandsInPlay
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
@@ -249,7 +249,7 @@ class Hand:
             if (self.NumberOfLands > 0):
                 self.NumberOfLands -= 1
                 return True
-        else
+        else:
             return False
 
     def AddDrawnCard(self, card_type):
