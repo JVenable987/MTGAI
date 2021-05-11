@@ -78,10 +78,10 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
         self.deck.NumberOfLands]
-        self.done = false
+        self.done = False
         self.reward = 0
         info = state
-        return state, reward, done, info
+        return state, self.reward, done, info
 
     def step(self, action):
         # Take in the AI's action for one turn, process the results,
@@ -218,7 +218,7 @@ class MTGEnv(gym.Env):
             self.LandsInPlay = 1
         else:
             self.LandsInPlay = 0
-        self.ManaLeft = LandsInPlay
+        self.ManaLeft = self.LandsInPlay
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
@@ -236,7 +236,7 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf6Cost, \
         self.deck.NumberOfLands]
         reward = 0
-        done = false
+        done = False
         info = state
         #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         return state, reward, done, info
