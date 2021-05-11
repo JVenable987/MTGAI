@@ -69,7 +69,7 @@ class MTGEnv(gym.Env):
         
         handInfo = self.hand.GetHand()
         
-        state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
+        state = np.reshape(np.array([self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
         handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
         self.deck.NumberOf2Cost, \
@@ -77,7 +77,7 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf4Cost, \
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
-        self.deck.NumberOfLands]
+        self.deck.NumberOfLands]), 19)
         self.done = False
         self.reward = 0
         info = state
@@ -188,7 +188,7 @@ class MTGEnv(gym.Env):
         
         handInfo = self.hand.GetHand()
         
-        state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
+        state = np.reshape(np.array([self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
         handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
         self.deck.NumberOf2Cost, \
@@ -196,7 +196,7 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf4Cost, \
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
-        self.deck.NumberOfLands]
+        self.deck.NumberOfLands]), 19)
         #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         if not done:
             reward = self.CreatureDamage
@@ -225,7 +225,7 @@ class MTGEnv(gym.Env):
         
         handInfo = self.hand.GetHand()
         
-        state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
+        state = np.reshape(np.array([self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
         handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
         self.deck.NumberOf2Cost, \
@@ -233,7 +233,7 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf4Cost, \
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
-        self.deck.NumberOfLands]
+        self.deck.NumberOfLands]), 19)
         reward = 0
         done = False
         info = state
@@ -411,10 +411,10 @@ class Deck:
 
 model = keras.Sequential()
 model.add(layers.Input(shape=(1, 19))) #input shape should be changed to 1, 19
-model.add(layers.Dense(100, activation='sigmoid'))
-model.add(layers.Dense(50, activation='sigmoid'))
+model.add(layers.Dense(40, activation='sigmoid'))
 model.add(layers.Dense(20, activation='sigmoid'))
-model.add(layers.Dense(5, activation='linear'))           #output shape should be changed to 7
+model.add(layers.Dense(7, activation='linear'))           #output shape should be changed to 7
+model.add(layers.Softmax())
 model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 
 env = MTGEnv()
@@ -436,12 +436,20 @@ for i in range(num_episodes):
         if np.random.random() < eps:
             a = np.random.randint(0, 7)
         else:
-            a = np.argmax(model.predict(np.identity(5)[s:s + 1]))
+            a = np.random.randint(0, 7)
+            #a = np.argmax(model.predict(np.array(s)))
+        
+        print(a)
+        #print(type([s:s + 1]))
         new_s, r, done, _ = env.step(a)
-        target = r + y * np.max(model.predict(np.identity(5)[new_s:new_s + 1]))
-        target_vec = model.predict(np.identity(5)[s:s + 1])[0]
-        target_vec[a] = target
-        model.fit(np.identity(5)[s:s + 1], target_vec.reshape(-1, 7), epochs=1, verbose=0)
+        #print(type(new_s))
+        #print(new_s)
+        #print(new_s.shape())
+        #target = r + y * np.max(model.predict(new_s))
+        #target_vec = model.predict(np.array(s))[0]
+        #target_vec[a] = target
+        #target_vec[a] = r
+        #model.fit(np.array(s), target_vec.reshape(-1, 7), epochs=1, verbose=0)
         s = new_s
         r_sum += r
     r_avg_list.append(r_sum / 1000)
