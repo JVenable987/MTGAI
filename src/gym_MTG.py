@@ -1,3 +1,12 @@
+import numpy as np
+import pandas as pd
+
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+
+
 import gym
 from gym import spaces #this adds space.Tuple, and presumably other things as well
 import random
@@ -16,7 +25,7 @@ class MTGEnv(gym.Env):
 
     def __init__(self):
         #check out spaces.MultiDiscrete(), and see if it fits the situation better
-        self.observation_space = gym.spaces.TupleDiscrete(6)  # Number of state information numbers that need to be provided
+        #self.observation_space = gym.spaces.Tuple(6)  # Number of state information numbers that need to be provided
         ##should provide... (as explaination, '\' is line countinuation character I believe, and ## are commented out comments so you can remove # from each line)
         
         ##game state values, Five total, maybe add if a land was played, but currently looks like land automatically played once per turn.
@@ -40,21 +49,36 @@ class MTGEnv(gym.Env):
         self.deck = Deck()
         self.deck.SetDeck(DECK_CONTENTS[0], DECK_CONTENTS[1], DECK_CONTENTS[2], DECK_CONTENTS[3],
                           DECK_CONTENTS[4], DECK_CONTENTS[5], DECK_CONTENTS[6])
-        self.hand = Hand()
-        hand_arr = self.deck.DrawHand()
-        self.hand.SetHand(hand_arr[0], hand_arr[1], hand_arr[2], hand_arr[3],
-                          hand_arr[4], hand_arr[5], hand_arr[6])
+        hand = self.deck.DrawHand()
+        #self.hand = Hand()
+        #self.hand.SetHand(hand_arr[0], hand_arr[1], hand_arr[2], hand_arr[3],
+        #                  hand_arr[4], hand_arr[5], hand_arr[6])
         self.FinalTurn = FINAL_TURN
         self.Turn = 1
         if (self.hand.PlayCard(7)):
             self.LandsInPlay = 1
+            self.ManaLeft = 1
         else:
             self.LandsInPlay = 0
-        self.ManaLeft = self.LandsInPlay
+            self.ManaLeft = 1
+        #self.ManaLeft = LandsInPlay
         
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
+        state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
+        self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        self.deck.NumberOf1Cost, \
+        self.deck.NumberOf2Cost, \
+        self.deck.NumberOf3Cost, \
+        self.deck.NumberOf4Cost, \
+        self.deck.NumberOf5Cost, \
+        self.deck.NumberOf6Cost, \
+        self.deck.NumberOfLands]
+        self.done = false
+        self.reward = 0
+        info = state
+        return state, reward, done, info
 
     def step(self, action):
         # Take in the AI's action for one turn, process the results,
@@ -159,10 +183,20 @@ class MTGEnv(gym.Env):
 
         # TODO check what state values the AI should know
         #refer to around line 22 for values for state
-        state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
+        
+        state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
+        self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        self.deck.NumberOf1Cost, \
+        self.deck.NumberOf2Cost, \
+        self.deck.NumberOf3Cost, \
+        self.deck.NumberOf4Cost, \
+        self.deck.NumberOf5Cost, \
+        self.deck.NumberOf6Cost, \
+        self.deck.NumberOfLands]
+        #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         if not done:
             reward = self.CreatureDamage
-        info = self.deck
+        info = state
         return state, reward, done, info
 
     def reset(self):
@@ -179,13 +213,25 @@ class MTGEnv(gym.Env):
             self.LandsInPlay = 1
         else:
             self.LandsInPlay = 0
-        self.ManaLeft = self.LandsInPlay
+        self.ManaLeft = LandsInPlay
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
         # TODO check what state values the AI should know, and remember to do in order
-        state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
-        return state
+        state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
+        self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        self.deck.NumberOf1Cost, \
+        self.deck.NumberOf2Cost, \
+        self.deck.NumberOf3Cost, \
+        self.deck.NumberOf4Cost, \
+        self.deck.NumberOf5Cost, \
+        self.deck.NumberOf6Cost, \
+        self.deck.NumberOfLands]
+        reward = 0
+        done = false
+        info = state
+        #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
+        return state, reward, done, info
 
     def render(self, mode='human'):
         pass
@@ -221,31 +267,31 @@ class Hand:
         self.NumberOfLands = NrLands
 
     def PlayCard(self, card_type):
-        if card_type == 1:
+        if (card_type == 1):
             if (self.NumberOf1Cost > 0):
                 self.NumberOf1Cost -= 1
                 return True
-        elif card_type == 2:
+        elif (card_type == 2):
             if (self.NumberOf2Cost > 0):
                 self.NumberOf2Cost -= 1
                 return True
-        elif card_type == 3:
+        elif (card_type == 3):
             if (self.NumberOf3Cost > 0):
                 self.NumberOf3Cost -= 1
                 return True
-        elif card_type == 4:
+        elif (card_type == 4):
             if (self.NumberOf4Cost > 0):
                 self.NumberOf4Cost -= 1
                 return True
-        elif card_type == 5:
+        elif (card_type == 5):
             if (self.NumberOf5Cost > 0):
                 self.NumberOf5Cost -= 1
                 return True
-        elif card_type == 6:
+        elif (card_type == 6):
             if (self.NumberOf6Cost > 0):
                 self.NumberOf6Cost -= 1
                 return True
-        elif card_type == 7:
+        elif (card_type == 7):
             if (self.NumberOfLands > 0):
                 self.NumberOfLands -= 1
                 return True
@@ -311,25 +357,25 @@ class Deck:
         SixCostCutoff = FiveCostCutoff + self.NumberOf6Cost
         LandCutoff = SixCostCutoff + self.NumberOfLands
 
-        if RandomIntegerBetweenOneAndDeckSize <= OneCostCutoff:
+        if (RandomIntegerBetweenOneAndDeckSize <= OneCostCutoff):
             CardType = 1
             self.NumberOf1Cost -= 1
-        if OneCostCutoff < RandomIntegerBetweenOneAndDeckSize <= TwoCostCutoff:
+        if (OneCostCutoff < RandomIntegerBetweenOneAndDeckSize <= TwoCostCutoff):
             CardType = 2
             self.NumberOf2Cost -= 1
-        if TwoCostCutoff < RandomIntegerBetweenOneAndDeckSize <= ThreeCostCutoff:
+        if (TwoCostCutoff < RandomIntegerBetweenOneAndDeckSize <= ThreeCostCutoff):
             CardType = 3
             self.NumberOf3Cost -= 1
-        if ThreeCostCutoff < RandomIntegerBetweenOneAndDeckSize <= FourCostCutoff:
+        if (ThreeCostCutoff < RandomIntegerBetweenOneAndDeckSize <= FourCostCutoff):
             CardType = 4
             self.NumberOf4Cost -= 1
-        if FourCostCutoff < RandomIntegerBetweenOneAndDeckSize <= FiveCostCutoff:
+        if (FourCostCutoff < RandomIntegerBetweenOneAndDeckSize <= FiveCostCutoff):
             CardType = 5
             self.NumberOf5Cost -= 1
-        if FiveCostCutoff < RandomIntegerBetweenOneAndDeckSize <= SixCostCutoff:
+        if (FiveCostCutoff < RandomIntegerBetweenOneAndDeckSize <= SixCostCutoff):
             CardType = 6
             self.NumberOf6Cost -= 1
-        if SixCostCutoff < RandomIntegerBetweenOneAndDeckSize <= LandCutoff:
+        if (SixCostCutoff < RandomIntegerBetweenOneAndDeckSize <= LandCutoff):
             CardType = 7  # this has been changed to 7 so that other methods work with it
             self.NumberOfLands -= 1
         return CardType
@@ -350,85 +396,44 @@ class Deck:
 #examples are directly from website at https://adventuresinmachinelearning.com/reinforcement-learning-tutorial-python-keras/
 #We should implement the keras one, but I have included others, in order to understand what's going on.
 
-#def eps_greedy_q_learning_with_table(env, num_episodes=500):
-#    q_table = np.zeros((5, 2))
-#    y = 0.95
-#    eps = 0.5
-#    lr = 0.8
-#    decay_factor = 0.999
-#    for i in range(num_episodes):
-#        s = env.reset()
-#        eps *= decay_factor
-#        done = False
-#        while not done:
-#            # select the action with highest cummulative reward
-#            if np.random.random() < eps or np.sum(q_table[s, :]) == 0:
-#                a = np.random.randint(0, 2)
-#            else:
-#                a = np.argmax(q_table[s, :])
-#            # pdb.set_trace()
-#            new_s, r, done, _ = env.step(a)
-#            q_table[s, a] += r + lr * (y * np.max(q_table[new_s, :]) - q_table[s, a])
-#            s = new_s
-#    return q_table
-
-#def test_methods(env, num_iterations=100):
-#    winner = np.zeros((3,))
-#    for g in range(num_iterations):
-#        m0_table = naive_sum_reward_agent(env, 500)
-#        m1_table = q_learning_with_table(env, 500)
-#        m2_table = eps_greedy_q_learning_with_table(env, 500)
-#        m0 = run_game(m0_table, env)
-#        m1 = run_game(m1_table, env)
-#        m2 = run_game(m2_table, env)
-#        w = np.argmax(np.array([m0, m1, m2]))
-#        winner[w] += 1
-#        print("Game {} of {}".format(g + 1, num_iterations))
-#    return winner
-
-#def run_game(table, env):
-#    s = env.reset()
-#    tot_reward = 0
-#    done = False
-#    while not done:
-#        a = np.argmax(table[s, :])
-#        s, r, done, _ = env.step(a)
-#        tot_reward += r
-#    return tot_reward
-
 #With keras model it is
 
-#model = Sequential()
-#model.add(InputLayer(batch_input_shape=(1, 5))) #input shape should be changed to 1, 19
-#model.add(Dense(10, activation='sigmoid'))
-#model.add(Dense(2, activation='linear'))           #output shape should be changed to 7
-#model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+model = keras.Sequential()
+model.add(layers.Input(shape=(1, 19))) #input shape should be changed to 1, 19
+model.add(layers.Dense(100, activation='sigmoid'))
+model.add(layers.Dense(50, activation='sigmoid'))
+model.add(layers.Dense(20, activation='sigmoid'))
+model.add(layers.Dense(5, activation='linear'))           #output shape should be changed to 7
+model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+
+env = MTGEnv()
+num_episodes = 10000
 
 # now execute the q learning
-#y = 0.95
-#eps = 0.5
-#decay_factor = 0.999
-#r_avg_list = []
-#for i in range(num_episodes):
-#    s = env.reset()
-#    eps *= decay_factor
-#    if i % 100 == 0:
-#        print("Episode {} of {}".format(i + 1, num_episodes))
-#    done = False
-#    r_sum = 0
-#    while not done:
-#        if np.random.random() < eps:
-#            a = np.random.randint(0, 2)
-#        else:
-#            a = np.argmax(model.predict(np.identity(5)[s:s + 1]))
-#        new_s, r, done, _ = env.step(a)
-#        target = r + y * np.max(model.predict(np.identity(5)[new_s:new_s + 1]))
-#        target_vec = model.predict(np.identity(5)[s:s + 1])[0]
-#        target_vec[a] = target
-#        model.fit(np.identity(5)[s:s + 1], target_vec.reshape(-1, 2), epochs=1, verbose=0)
-#        s = new_s
-#        r_sum += r
-#    r_avg_list.append(r_sum / 1000)
+y = 0.95
+eps = 0.5
+decay_factor = 0.999
+r_avg_list = []
+for i in range(num_episodes):
+    s = env.reset()
+    eps *= decay_factor
+    if i % 100 == 0:
+        print("Episode {} of {}".format(i + 1, num_episodes))
+    done = False
+    r_sum = 0
+    while not done:
+        if np.random.random() < eps:
+            a = np.random.randint(0, 2)
+        else:
+            a = np.argmax(model.predict(np.identity(5)[s:s + 1]))
+        new_s, r, done, _ = env.step(a)
+        target = r + y * np.max(model.predict(np.identity(5)[new_s:new_s + 1]))
+        target_vec = model.predict(np.identity(5)[s:s + 1])[0]
+        target_vec[a] = target
+        model.fit(np.identity(5)[s:s + 1], target_vec.reshape(-1, 2), epochs=1, verbose=0)
+        s = new_s
+        r_sum += r
+    r_avg_list.append(r_sum / 1000)
 
 #Training
 
