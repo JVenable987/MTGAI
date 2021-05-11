@@ -66,8 +66,11 @@ class MTGEnv(gym.Env):
         self.CreatureDamage = 0
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
+        
+        handInfo = self.hand.GetHand()
+        
         state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
-        self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
         self.deck.NumberOf2Cost, \
         self.deck.NumberOf3Cost, \
@@ -184,8 +187,10 @@ class MTGEnv(gym.Env):
         # TODO check what state values the AI should know
         #refer to around line 22 for values for state
         
+        handInfo = self.hand.GetHand()
+        
         state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
-        self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
         self.deck.NumberOf2Cost, \
         self.deck.NumberOf3Cost, \
@@ -218,8 +223,11 @@ class MTGEnv(gym.Env):
         self.TotalDamage = 0
         self.CreaturesPlayedThisTurn = [0, 0, 0, 0, 0, 0]
         # TODO check what state values the AI should know, and remember to do in order
+        
+        handInfo = self.hand.GetHand()
+        
         state = [self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
-        self.hand[0], self.hand[1], self.hand[2], self.hand[3], self.hand[4], self.hand[5], self.hand[6], \
+        handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
         self.deck.NumberOf2Cost, \
         self.deck.NumberOf3Cost, \
@@ -247,6 +255,10 @@ class Hand:
         self.NumberOf6Cost = 0
         self.NumberOfLands = 0
 
+    def GetHand(self):
+        return [self.NumberOf1Cost, self.NumberOf2Cost, self.NumberOf3Cost, self.NumberOf4Cost, \
+                self.NumberOf5Cost, self.NumberOf6Cost, self.NumberOfLands]
+        
     #    void ResetHand(){
     def ResetHand(self):
         self.NumberOf1Cost = 0
