@@ -15,6 +15,7 @@ FINAL_TURN = 5
 class MTGEnv(gym.Env):
 
     def __init__(self):
+        #check out spaces.MultiDiscrete(), and see if it fits the situation better
         self.observation_space = gym.spaces.TupleDiscrete(6)  # Number of state information numbers that need to be provided
         ##should provide... (as explaination, '\' is line countinuation character I believe, and ## are commented out comments so you can remove # from each line)
         
@@ -35,8 +36,6 @@ class MTGEnv(gym.Env):
         #self.deck.NumberOf5Cost, \
         #self.deck.NumberOf6Cost, \
         #self.deck.NumberOfLands) #and this is ending the things we are putting in.  As such, there are 5+7+7 variables for the states.
-        
-        #check out spaces.MultiDiscrete(), and see if it fits the situation better
         self.action_space = gym.spaces.Discrete(7)  # Number of possible actions
         self.deck = Deck()
         self.deck.SetDeck(DECK_CONTENTS[0], DECK_CONTENTS[1], DECK_CONTENTS[2], DECK_CONTENTS[3],
