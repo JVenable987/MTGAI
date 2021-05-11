@@ -77,8 +77,8 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf4Cost, \
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
-        self.deck.NumberOfLands]), 19)
-        self.done = False
+        self.deck.NumberOfLands]), (1,19))
+        done = False
         self.reward = 0
         info = state
 
@@ -196,7 +196,7 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf4Cost, \
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
-        self.deck.NumberOfLands]), 19)
+        self.deck.NumberOfLands]), (1,19))
         #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         if not done:
             reward = self.CreatureDamage
@@ -233,7 +233,7 @@ class MTGEnv(gym.Env):
         self.deck.NumberOf4Cost, \
         self.deck.NumberOf5Cost, \
         self.deck.NumberOf6Cost, \
-        self.deck.NumberOfLands]), 19)
+        self.deck.NumberOfLands]), (1,19))
         reward = 0
         done = False
         info = state
@@ -418,7 +418,7 @@ model.add(layers.Softmax())
 model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 
 env = MTGEnv()
-num_episodes = 10000
+num_episodes = 100
 
 # now execute the q learning
 y = 0.95
@@ -428,7 +428,7 @@ r_avg_list = []
 for i in range(num_episodes):
     s = env.reset()
     eps *= decay_factor
-    if i % 100 == 0:
+    if i % 10 == 0:
         print("Episode {} of {}".format(i + 1, num_episodes))
     done = False
     r_sum = 0
@@ -436,20 +436,48 @@ for i in range(num_episodes):
         if np.random.random() < eps:
             a = np.random.randint(0, 7)
         else:
-            a = np.random.randint(0, 7)
-            #a = np.argmax(model.predict(np.array(s)))
+            #a = np.random.randint(0, 7)
+            a = np.argmax(model.predict(np.array(s)))
         
-        print(a)
-        #print(type([s:s + 1]))
-        new_s, r, done, _ = env.step(a)
+        if (a > 7 or a < 0):
+          print("A is out of bounds at:")
+          print(a)
+        if i % 10 == 0:
+          print("game is: ")
+          print(i)
+          print("turn is: ")
+          print(s[0][0])
+          print("Ai decision is to play a ")
+          print(a+1)
+          print("state before is: ")
+          print(s[0])
+        #if((s[0][0]) >= 3):
+        #  print("turn is: ")
+        #  print(s[0][0])
+
+        new_s, r, done, _ = env.step(a+1)
+        if i % 10 == 0:
+          print("state after is: ")
+          print(new_s[0])
+        #if(s[0] >= 3):
+        #  print("new_s is: ")
+        #  print(new_s)
         #print(type(new_s))
         #print(new_s)
         #print(new_s.shape())
-        #target = r + y * np.max(model.predict(new_s))
-        #target_vec = model.predict(np.array(s))[0]
-        #target_vec[a] = target
-        #target_vec[a] = r
-        #model.fit(np.array(s), target_vec.reshape(-1, 7), epochs=1, verbose=0)
+        target = r + y * np.max(model.predict(new_s))
+        #if(s >= 3):
+        #  print("target is: ")
+        #  print(target)
+        target_vec = model.predict(s)[0]
+        #if(s[0] >= 3):
+        #  print("target_vec is:")
+        #  print(target_vec)
+        target_vec[a] = target
+        #if(s[0] >= 3):
+        #  print("target_vec[a] is:")
+        #  print(target_vec[a])
+        model.fit(np.array(s), target_vec.reshape(-1, 7), epochs=1, verbose=0)
         s = new_s
         r_sum += r
     r_avg_list.append(r_sum / 1000)
