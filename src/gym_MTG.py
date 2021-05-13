@@ -451,7 +451,12 @@ for i in range(num_episodes):
         if (a > 7 or a < 0):
           print("A is out of bounds at:")
           print(a)
-        if ((s[0][3]) > 0):
+        #if((s[0][0]) >= 3):
+        #  print("turn is: ")
+        #  print(s[0][0])
+
+        new_s, r, done, _ = env.step(a+1)
+        if ((new_s[0][3]) > 0):
           print("game is: ")
           print(i+1)
           print("turn is: ")
@@ -460,12 +465,7 @@ for i in range(num_episodes):
           print(a+1)
           print("state before is: ")
           print(s[0])
-        #if((s[0][0]) >= 3):
-        #  print("turn is: ")
-        #  print(s[0][0])
-
-        new_s, r, done, _ = env.step(a+1)
-        if ((s[0][3]) > 0):
+        if ((new_s[0][3]) > 0):
           print("state after is: ")
           print(new_s[0])
         #if(s[0] >= 3):
