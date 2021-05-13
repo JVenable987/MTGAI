@@ -185,10 +185,10 @@ class MTGEnv(gym.Env):
             # Tap all lands, add mana accordingly
             self.ManaLeft = self.LandsInPlay
 
-            # Update total creature damage based on creatures played last turn
-            for creature_type, played_creature_amt in enumerate(self.CreaturesPlayedThisTurn):
-                self.CreatureDamage += played_creature_amt * (creature_type + 2)
-                self.CreaturesPlayedThisTurn[creature_type] = 0
+        # Update total creature damage based on creatures played last turn
+        for creature_type, played_creature_amt in enumerate(self.CreaturesPlayedThisTurn):
+            self.CreatureDamage += played_creature_amt * (creature_type + 2)
+            self.CreaturesPlayedThisTurn[creature_type] = 0
 
         # TODO check what state values the AI should know
         #refer to around line 22 for values for state
