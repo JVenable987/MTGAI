@@ -117,7 +117,7 @@ class MTGEnv(gym.Env):
         if action == 1:
             if (self.ManaLeft < 1) or (self.hand.NumberOf1Cost < 1):
                 # Invalid move, punish AI, end game
-                reward = -100
+                reward = -10
                 done = True
             else:
                 self.hand.PlayCard(1)
@@ -126,7 +126,7 @@ class MTGEnv(gym.Env):
         elif action == 2:
             if (self.ManaLeft < 2) or (self.hand.NumberOf2Cost < 1):
                 # Invalid move, punish AI, end game
-                reward = -100
+                reward = -10
                 done = True
             else:
                 self.hand.PlayCard(2)
@@ -135,7 +135,7 @@ class MTGEnv(gym.Env):
         elif action == 3:
             if (self.ManaLeft < 3) or (self.hand.NumberOf3Cost < 1):
                 # Invalid move, punish AI, end game
-                reward = -100
+                reward = -10
                 done = True
             else:
                 self.hand.PlayCard(3)
@@ -144,7 +144,7 @@ class MTGEnv(gym.Env):
         elif action == 4:
             if (self.ManaLeft < 4) or (self.hand.NumberOf4Cost < 1):
                 # Invalid move, punish AI, end game
-                reward = -100
+                reward = -10
                 done = True
             else:
                 self.hand.PlayCard(4)
@@ -153,7 +153,7 @@ class MTGEnv(gym.Env):
         elif action == 5:
             if (self.ManaLeft < 5) or (self.hand.NumberOf5Cost < 1):
                 # Invalid move, punish AI, end game
-                reward = -100
+                reward = -10
                 done = True
             else:
                 self.hand.PlayCard(5)
@@ -162,7 +162,7 @@ class MTGEnv(gym.Env):
         elif action == 6:
             if (self.ManaLeft < 6) or (self.hand.NumberOf6Cost < 1):
                 # Invalid move, punish AI, end game
-                reward = -100
+                reward = -10
                 done = True
             else:
                 self.hand.PlayCard(6)
@@ -175,7 +175,7 @@ class MTGEnv(gym.Env):
 
             # Ending Phase
             # TODO discard down to 7 cards in hand if above 7 cards in hand
-            if self.Turn == self.FinalTurn:
+            if self.Turn == FINAL_TURN:
                 done = True
                 reward = self.CreatureDamage
             self.Turn += 1
@@ -188,14 +188,19 @@ class MTGEnv(gym.Env):
         self.pastCreature = self.CreatureDamage
         # Update total creature damage based on creatures played last turn
         for creature_type, played_creature_amt in enumerate(self.CreaturesPlayedThisTurn):
+            #print("PlayedThisManyXDrops", played_creature_amt)
             self.CreatureDamage += played_creature_amt * (creature_type + 2)
+            #print("Inner Creature Damage is:", self.CreatureDamage)
             self.CreaturesPlayedThisTurn[creature_type] = 0
-
+        #print("Outer Creature Damage is:", self.CreatureDamage)
         # TODO check what state values the AI should know
         #refer to around line 22 for values for state
         
         handInfo = self.hand.GetHand()
-        
+        #if(self.CreatureDamage !=0):
+        #  print("CreatureDamage")
+        #if(self.TotalDamage !=0):
+        #  print("TotalDamage")
         state = np.reshape(np.array([self.Turn, self.ManaLeft, self.LandsInPlay, self.CreatureDamage, self.TotalDamage, \
         handInfo[0], handInfo[1], handInfo[2], handInfo[3], handInfo[4], handInfo[5], handInfo[6], \
         self.deck.NumberOf1Cost, \
@@ -207,8 +212,11 @@ class MTGEnv(gym.Env):
         self.deck.NumberOfLands]), (1,19))
         #state = (self.CreatureDamage, self.Turn, self.hand, self.ManaLeft, self.CreaturesPlayedThisTurn, DECK_CONTENTS)
         #if not done:
-        if reward != -100:
+        if reward != -10:
             reward = self.CreatureDamage - self.pastCreature
+        self.pastCreature = 0
+        if (action == 7):
+            reward = self.ManaLeft * -1 + self.CreatureDamage
         info = state
         return state, reward, done, info
 
@@ -422,16 +430,16 @@ model.add(layers.Input(shape=(19))) #input shape should be changed to 1, 19
 model.add(layers.Dense(40, activation='sigmoid'))
 model.add(layers.Dense(20, activation='sigmoid'))
 model.add(layers.Dense(7, activation='linear'))           #output shape should be changed to 7
-model.add(layers.Softmax())
+#model.add(layers.Softmax())
 model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 
 env = MTGEnv()
-num_episodes = 10000
+num_episodes = 2500
 
 # now execute the q learning
-y = .95
+y = .05
 eps = .5
-decay_factor = 0.9999
+decay_factor = 0.999
 r_avg_list = []
 totalAdvancingMovesGame = 0.0
 AIGames = 0.0
@@ -471,8 +479,8 @@ for i in range(num_episodes):
             #print(i+1)
             #print("turn is: ")
             #print(s[0][0])
-            #print("Ai decision is to play a ")
-            #print(a+1)
+        #print("Ai decision is to play a ")
+        #print(a+1)
             #print("state before is: ")
             #print(s[0])
             #print("state after is: ")
@@ -484,25 +492,26 @@ for i in range(num_episodes):
         #print(new_s)
         #print(new_s.shape())
         target = r + y * np.max(model.predict(new_s))
-        #if(s >= 3):
-        #  print("target is: ")
-        #  print(target)
+        #if((s[0][0]) >= 3):
+        #print("target is:", target)
         target_vec = model.predict(s)[0]
-        #if(s[0] >= 3):
-        #  print("target_vec is:")
-        #  print(target_vec)
+        #if((s[0][0]) >= 3):
+        #print("target_vec is:", target_vec)
+        #print("target_vec[a] is:", target_vec[a])
         target_vec[a] = target
-        #if(s[0] >= 3):
-        #  print("target_vec[a] is:")
-        #  print(target_vec[a])
-        model.fit(np.array(s), target_vec.reshape(-1, 7), epochs=1, verbose=0)
+        #print("Reshape is:", target_vec.reshape(1, 7))
+        model.fit(np.array(s), target_vec.reshape(1,7), epochs=1, verbose=0)
+        target_vec = model.predict(s)[0]
+        #if((s[0][0]) >= 3):
+        #print("target_vec is:", target_vec)
+        #print("target_vec[a] is:", target_vec[a])
         s = new_s
         r_sum += r
     r_avg_list.append(r_sum / 1000)
     #print(totalAdvancingMovesGame)
     if ((totalAdvancingMovesGame) / (AIGames+1)) > movesPerGameThresh:
-      print ("Exceeded thresh of :", movesPerGameThresh)
-      print ("At the game", i+1)
+      print ("Exceeded thresh of advancing moves per step:", movesPerGameThresh)
+      print ("At the game:", i+1)
       movesPerGameThresh += .01
 
 #Training
@@ -530,10 +539,13 @@ for i in range(num_episodes):
 #    env.step(np.argmax(...))#the env.action_space.sample() should be replaced with the np.argmax when predicting I believe
 #    env.close()
 
+#tester for ai after training
+
 num_episodes = 100
 AIGames = 0
 totalAdvancingMovesGame = 0
 DamageSum = 0
+totalGameTurns = 0
 eps = 0
 for i in range(num_episodes):
     s = env.reset()
@@ -542,6 +554,7 @@ for i in range(num_episodes):
         print("Episode {} of {}".format(i + 1, num_episodes))
     done = False
     r_sum = 0
+    DamageInter = 0
     if i % 100 == 0:
         print("game is: ")
         print(i+1)
@@ -563,22 +576,64 @@ for i in range(num_episodes):
         #  print("turn is: ")
         #  print(s[0][0])
         new_s, r, done, _ = env.step(a+1)
-        if (True):
-            if AIGame:
-                totalAdvancingMovesGame += 1
-                DamageSum += (new_s[0][3])
-            print("game is: ")
-            print(i+1)
-            print("turn is: ")
-            print(s[0][0])
-            print("Ai decision is to play a ")
-            print(a+1)
+        DamageInter = new_s[0][4]
+        if ((new_s[0][3]) > (s[0][3])):
+            totalAdvancingMovesGame += 1
+        if (a+1) == 7:
+            totalGameTurns += 1
+        if (i == 0):
+            
+            print("game is:", i+1)
+            print("turn is:", s[0][0])
+            print("Ai decision is to play:", a+1)
             print("state before is: ")
             print(s[0])
+            print("Turn", (s[0][0]))
+            print("Mana: ", (s[0][1]))
+            print("Lands", (s[0][2]))
+            print("Creature damage", (s[0][3]))
+            print("Total damage", (s[0][4]))
+            print("Ones in hand", (s[0][5]))
+            print("Twos in hand", (s[0][6]))
+            print("Threes in hand", (s[0][7]))
+            print("Fours in hand", (s[0][8]))
+            print("Fives in hand", (s[0][9]))
+            print("Sixes in hand", (s[0][10]))
+            print("Lands in hand", (s[0][11]))
+            print("Ones in deck", (s[0][12]))
+            print("Twos in deck", (s[0][13]))
+            print("Threes in deck", (s[0][14]))
+            print("Fours in deck", (s[0][15]))
+            print("Fives in deck", (s[0][16]))
+            print("Sixes in deck", (s[0][17]))
+            print("Lands in deck", (s[0][18]))
+
+
             print("state after is: ")
             print(new_s[0])
+            print("Creature damage", (new_s[0][3]))
+            print("Total damage", (new_s[0][4]))
+            print("Ones in hand", (new_s[0][5]))
+            print("Twos in hand", (new_s[0][6]))
+            print("Threes in hand", (new_s[0][7]))
+            print("Fours in hand", (new_s[0][8]))
+            print("Fives in hand", (new_s[0][9]))
+            print("Sixes in hand", (new_s[0][10]))
+            print("Lands in hand", (new_s[0][11]))
+            print("Ones in deck", (new_s[0][12]))
+            print("Twos in deck", (new_s[0][13]))
+            print("Threes in deck", (new_s[0][14]))
+            print("Fours in deck", (new_s[0][15]))
+            print("Fives in deck", (new_s[0][16]))
+            print("Sixes in deck", (new_s[0][17]))
+            print("Lands in deck", (new_s[0][18]))
+    DamageSum += DamageInter
     if True:
-          print ("At thresh of :", (totalAdvancingMovesGame) / (i+1))
-          print ("At the game", i+1)
+          print ("Advancements/game :", (totalAdvancingMovesGame) / (i+1))
+          print ("Advancements/step :", (totalAdvancingMovesGame) / (AIGames+1))
+          print ("At the game: ", i+1)
           #movesPerGameThresh += .01
-print("DamageSum is", DamageSum)
+print("DamageSum is: ", DamageSum)
+print("Total Game turns are: ", totalGameTurns)
+model.summary()
+model.save('/content/')
